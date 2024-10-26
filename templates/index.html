@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen text-gray-100">
+    <div class="w-full max-w-md p-6 bg-gray-800 rounded-lg shadow-lg">
+        
+        <!-- Header with Toggle Dark Mode Button -->
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-medium text-gray-200">Chatbot</h2>
+            <button onclick="toggleTheme()" 
+                    class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-3 py-1.5 text-center">
+                Toggle Dark Mode
+            </button>
+        </div>
+
+        <!-- Chat Box -->
+        <div id="chat-box" class="h-80 overflow-y-auto p-4 bg-gray-700 rounded-lg mb-4">
+            {% for timestamp, sender, message in chat_history %}
+                <div class="{{ 'text-right' if sender == 'User' else 'text-left' }} mb-4">
+                    <div class="{{ 'bg-blue-500 text-white' if sender == 'User' else 'bg-gray-600 text-gray-100' }} 
+                                inline-block p-2 rounded-lg max-w-xs">
+                        <strong>{{ sender }}:</strong> {{ message }}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1">{{ timestamp }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Input Field and Send Button -->
+        <div class="flex items-center space-x-2">
+            <input type="text" id="user-input" placeholder="Type your message..." 
+                   class="flex-1 p-2 bg-gray-600 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-100 placeholder-gray-400">
+            <button onclick="sendMessage()" 
+                    class="text-white bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+                Send
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function addMessageToChatbox(sender, message, timestamp = null) {
+            const chatBox = document.getElementById("chat-box");
+            const messageElement = document.createElement("div");
+            messageElement.className = sender === "User" ? "text-right mb-4" : "text-left mb-4";
+
+            messageElement.innerHTML = `
+                <div class="${sender === "User" ? "bg-blue-500 text-white" : "bg-gray-600 text-gray-100"} 
+                            inline-block p-2 rounded-lg max-w-xs">
+                    <strong>${sender}:</strong> ${message}
+                </div>
+                ${timestamp ? `<div class="text-xs text-gray-400 mt-1">${timestamp}</div>` : ""}
+            `;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;  // Scroll to the bottom of the chat
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById("user-input").value;
+            if (userInput.trim() === "") return;
+
+            addMessageToChatbox("User", userInput);
+            document.getElementById("user-input").value = "";
+
+            fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessageToChatbox("Bot", data.response);
+            });
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle("bg-gray-900");
+            document.body.classList.toggle("bg-white");
+            document.body.classList.toggle("text-gray-100");
+            document.body.classList.toggle("text-gray-900");
+
+            const chatContainer = document.querySelector(".w-full");
+            chatContainer.classList.toggle("bg-gray-800");
+            chatContainer.classList.toggle("bg-white");
+
+            const chatBox = document.getElementById("chat-box");
+            chatBox.classList.toggle("bg-gray-700");
+            chatBox.classList.toggle("bg-gray-100");
+
+            const userInput = document.getElementById("user-input");
+            userInput.classList.toggle("bg-gray-600");
+            userInput.classList.toggle("bg-gray-200");
+            userInput.classList.toggle("text-gray-100");
+            userInput.classList.toggle("text-gray-900");
+        }
+    </script>
+</body>
+</html>

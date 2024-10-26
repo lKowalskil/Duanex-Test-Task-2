@@ -1,0 +1,17 @@
+blinker
+cachelib
+click
+colorama
+Flask
+Flask-Session
+itsdangerous
+Jinja2
+joblib
+MarkupSafe
+msgspec
+nltk
+numpy
+regex
+textblob
+tqdm
+Werkzeug
