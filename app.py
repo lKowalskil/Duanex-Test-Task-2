@@ -7,6 +7,18 @@ import random
 from flask_session import Session
 from nltk import word_tokenize, pos_tag, ne_chunk
 import os
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(), 
+        logging.FileHandler("app.log") 
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -49,10 +61,10 @@ def extract_name(user_input):
         for entity in named_entities:
             if hasattr(entity, 'label') and entity.label() == 'PERSON':
                 name = ' '.join([leaf[0] for leaf in entity.leaves()])
-                session['name'] = name  # Store name in session
+                session['name'] = name
                 return f"Nice to meet you, {name}!"
     except Exception as e:
-        print(f"Name extraction error: {e}")
+        logger.error(f"Name extraction error: {e}")
     
     return None
 
@@ -80,8 +92,7 @@ def get_response(user_input):
     if 'interaction_count' not in session:
         session['interaction_count'] = 0
 
-    sentiment = TextBlob(user_input).sentiment.polarity
-    session['interaction_count'] += 1  
+    sentiment = TextBlob(user_input).sentiment.polarity  
 
     name_response = extract_name(user_input)
     if name_response:
@@ -93,10 +104,6 @@ def get_response(user_input):
         response = random.choice(negative_responses)
     else:
         response = random.choice(neutral_responses)
-
-    if session['interaction_count'] % 3 == 0:
-        response += " Can you please provide feedback on our conversation?"
-        session['awaiting_feedback'] = True  
     
     return response
 
@@ -108,31 +115,24 @@ def chat():
     session_id = session['session_id']
     user_input = request.json.get("message", "").strip() 
 
-    # Save the user message first
     save_message(session_id, "User", user_input)
 
-    # Check if we are awaiting feedback
     if 'awaiting_feedback' in session and session['awaiting_feedback']:
-        print(f"User Feedback: {user_input}")  
-        clear_chat_history(session_id)  # Clear chat history for this session
-        session.pop('awaiting_feedback', None)  # Reset feedback status
-        return jsonify({"response": "Thank you for your feedback!"})  # Acknowledge feedback
-
-    # Process the user's message and generate a response
+        clear_chat_history(session_id)  
+        session.pop('awaiting_feedback', None) 
+        session['interaction_count'] = 0
+        return jsonify({"response": "Thank you for your feedback!"})  
+    
     bot_response = get_response(user_input)
 
-    # Increment interaction count only for user messages
     if 'interaction_count' not in session:
         session['interaction_count'] = 0
-
-    session['interaction_count'] += 1  # Increment interaction count after user input
-
-    # Check if we need to ask for feedback after every three user interactions
-    if session['interaction_count'] % 3 == 0:
+        
+    session['interaction_count'] += 1
+    if session['interaction_count'] % 3 == 0 and session['interaction_count'] >= 3:
         session['awaiting_feedback'] = True 
         bot_response += " Can you please provide feedback on our conversation?"
 
-    # Save the bot's response
     save_message(session_id, "Bot", bot_response)
 
     return jsonify({"response": bot_response})

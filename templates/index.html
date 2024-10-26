@@ -61,18 +61,29 @@
         function sendMessage() {
             const userInput = document.getElementById("user-input").value;
             if (userInput.trim() === "") return;
-
+        
             addMessageToChatbox("User", userInput);
             document.getElementById("user-input").value = "";
-
+        
             fetch("/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: userInput })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    console.error("Failed to send message:", response.status);
+                    return;
+                }
+                return response.json();
+            })
             .then(data => {
-                addMessageToChatbox("Bot", data.response);
+                if (data && data.response) {
+                    addMessageToChatbox("Bot", data.response);
+                }
+            })
+            .catch(error => {
+                console.error("Error during fetch:", error);
             });
         }
 
