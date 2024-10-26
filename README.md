@@ -50,7 +50,7 @@ By default, the application will be accessible at [http://127.0.0.1:5000](http:/
   - **Positive messages** receive an encouraging response.
   - **Neutral messages** receive a general response.
   - **Negative messages** receive a sympathetic response.
-- **Feedback Prompt**: After three interactions, the bot will ask for feedback.
+- **Feedback Prompt**: After three interactions, the bot will ask for feedback and clean chat after it, you can see previous chat only before next reload, after reload only current converstaion would be visible.
 - **Dark Mode Toggle**: Click the “Toggle Dark Mode” button in the header to switch between themes.
 
 ## Troubleshooting
